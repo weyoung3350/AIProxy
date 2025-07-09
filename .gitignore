@@ -1,0 +1,77 @@
+# 日志文件
+logs/
+*.log
+
+# OpenResty临时目录
+client_body_temp/
+fastcgi_temp/
+proxy_temp/
+scgi_temp/
+uwsgi_temp/
+
+# 进程ID文件
+*.pid
+
+# 缓存文件
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+.pytest_cache/
+
+# 系统文件
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE文件
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 环境配置文件
+.env
+.env.local
+.env.*.local
+
+# 依赖目录
+node_modules/
+venv/
+env/
+
+# 构建输出
+dist/
+build/
+*.tar.gz
+
+# 测试覆盖率
+.coverage
+htmlcov/
+
+# 临时文件
+*.tmp
+*.temp
+*.bak
+*.backup
+
+# OpenResty源码包（太大不需要提交）
+openresty-*.tar.gz
+openresty-*/
+
+# 本地配置文件备份
+*.backup
+
+# 包含敏感信息的配置文件
+conf/channels_config.json
+conf/api_keys.json
+
+# 环境变量文件
+.env*
+!.env.example 

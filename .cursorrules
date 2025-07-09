@@ -1,0 +1,6 @@
+严格遵循需求文档和测试文件实现
+所有的实现不能用Mock，必须使用真实的API
+shell不要太花哨，要兼容zsh和bash
+日志要清晰易懂，不要用✅❌ 各种符号，眼花缭乱。。
+必须使用本项目的start.sh/stop.sh/restart.sh管理OpenResty。OpenResty的配置变更后必须重启
+运行环境规划：本机环境：Macos，Brew安装的OpenResty

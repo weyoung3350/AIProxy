@@ -1,0 +1,20 @@
+[
+  {
+    "proxy_key": "sk-bailian-tester-001",
+    "channel": "bailian",
+    "status": "active",
+    "description": "用户A的百炼代理密钥"
+  },
+  {
+    "proxy_key": "sk-bailian-tester-002", 
+    "channel": "bailian",
+    "status": "active",
+    "description": "用户B的百炼代理密钥"
+  },
+  {
+    "proxy_key": "sk-gemini-tester-001",
+    "channel": "gemini",
+    "status": "active",
+    "description": "用户C的Gemini代理密钥"
+  }
+] 

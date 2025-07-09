@@ -1,0 +1,36 @@
+{
+  "channels": {
+    "bailian": {
+      "name": "阿里云百炼",
+      "api_key": "YOUR_BAILIAN_API_KEY_HERE",
+      "base_url": "https://dashscope.aliyuncs.com",
+      "websocket_url": "wss://dashscope.aliyuncs.com",
+      "host": "dashscope.aliyuncs.com",
+      "path_rewrite": {
+        "/chat/completions": "/compatible-mode/v1/chat/completions"
+      },
+      "websocket_endpoints": {
+        "/v1/realtime": "/v1/realtime"
+      },
+      "supports_websocket": true,
+      "timeout": 30,
+      "ssl": true,
+      "status": "active"
+    },
+    "gemini": {
+      "name": "Google Gemini",
+      "api_key": "YOUR_GEMINI_API_KEY_HERE",
+      "base_url": "https://generativelanguage.googleapis.com",
+      "websocket_url": "wss://generativelanguage.googleapis.com",
+      "host": "generativelanguage.googleapis.com",
+      "path_rewrite": {
+        "/chat/completions": "/v1beta/models/gemini-pro:generateContent"
+      },
+      "websocket_endpoints": {},
+      "supports_websocket": false,
+      "timeout": 30,
+      "ssl": true,
+      "status": "active"
+    }
+  }
+} 
