@@ -151,6 +151,13 @@ end
 local function enhanced_process()
     ngx.log(ngx.INFO, "=== 开始处理API Key替换 ===")
     
+    -- 检查是否为内部管理页面，如果是则直接返回，不需要验证
+    local uri = ngx.var.uri
+    if uri == "/stats" or uri == "/dashboard" then
+        ngx.log(ngx.INFO, "内部管理页面请求，跳过API Key验证: " .. uri)
+        return
+    end
+    
     -- 检测请求类型
     local is_websocket = is_websocket_request()
     local protocol_type = is_websocket and "WebSocket" or "HTTP"
@@ -168,8 +175,10 @@ local function enhanced_process()
     
     ngx.log(ngx.INFO, "收到Authorization头: " .. string.sub(auth_header, 1, 20) .. "...")
     
-    -- 检查是否为Bearer token格式
-    if not string.match(auth_header, "^Bearer ") then
+    -- 检查是否为Bearer token格式（不区分大小写）
+    local bearer_pattern = "^[Bb][Ee][Aa][Rr][Ee][Rr] "
+    local bearer_match = string.match(auth_header, bearer_pattern)
+    if not bearer_match then
         ngx.log(ngx.WARN, "Authorization头格式不正确")
         ngx.status = 401
         ngx.say('{"error":"Invalid Authorization format"}')
@@ -177,8 +186,9 @@ local function enhanced_process()
         return
     end
     
-    -- 提取Proxy-Key
-    local proxy_key = string.sub(auth_header, 8) -- 移除 "Bearer "
+    -- 提取Proxy-Key（动态计算前缀长度）
+    local bearer_prefix_len = string.len(bearer_match)
+    local proxy_key = string.sub(auth_header, bearer_prefix_len + 1)
     ngx.log(ngx.INFO, "提取到Proxy-Key: " .. proxy_key)
     
     -- 加载配置

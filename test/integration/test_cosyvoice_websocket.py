@@ -3,6 +3,7 @@
 CosyVoice WebSocket API 测试
 基于官方文档：https://help.aliyun.com/zh/model-studio/cosyvoice-websocket-api
 """
+import unittest
 
 import websocket
 import json
@@ -12,10 +13,11 @@ import time
 import threading
 import subprocess
 import platform
+import unittest
 
 
 class CosyVoiceTTSClient:
-    def __init__(self, api_key, uri):
+    def __init__(self, api_key, uri, msg_text):
         """
         初始化 CosyVoiceTTSClient 实例
 
@@ -33,6 +35,7 @@ class CosyVoiceTTSClient:
         self.audio_received = False
         self.error_occurred = False
         self.error_message = ""
+        self.msg_text = msg_text
 
     def on_open(self, ws):
         """
@@ -92,10 +95,7 @@ class CosyVoiceTTSClient:
                             self.task_started = True
 
                             # 发送测试文本
-                            test_texts = [
-                                "你好，这是阿里云百炼平台CosyVoice语音合成测试。",
-                                "我是通过WebSocket API直接连接的语音合成服务，效果怎么样？"
-                            ]
+                            test_texts = self.msg_text
 
                             for text in test_texts:
                                 self.send_continue_task(text)
@@ -204,24 +204,24 @@ class CosyVoiceTTSClient:
         print("=" * 80)
         print("🎤 CosyVoice WebSocket API 直接对接测试")
         print("=" * 80)
-        
+
         # 在单独线程中运行WebSocket
         ws_thread = threading.Thread(target=self.run)
         ws_thread.daemon = True
         ws_thread.start()
-        
+
         # 等待测试完成或超时
         start_time = time.time()
         while time.time() - start_time < timeout:
             if self.task_finished or self.error_occurred:
                 break
             time.sleep(0.1)
-        
+
         # 输出测试结果
         print("\n" + "=" * 80)
         print("📊 测试结果")
         print("=" * 80)
-        
+
         if self.error_occurred:
             print(f"❌ 测试失败: {self.error_message}")
             return False
@@ -230,7 +230,7 @@ class CosyVoiceTTSClient:
             print(f"✅ 任务启动: {'成功' if self.task_started else '失败'}")
             print(f"✅ 音频接收: {'成功' if self.audio_received else '失败'}")
             print(f"✅ 任务完成: {'成功' if self.task_finished else '失败'}")
-            
+
             if os.path.exists(self.output_file):
                 file_size = os.path.getsize(self.output_file)
                 print(f"📁 输出文件: {self.output_file} ({file_size} 字节)")
@@ -252,9 +252,9 @@ class CosyVoiceTTSClient:
         if not os.path.exists(self.output_file):
             print("❌ 音频文件不存在")
             return False
-            
+
         print(f"🎵 准备播放音频文件: {self.output_file}")
-        
+
         try:
             system = platform.system()
             if system == "Darwin":  # macOS
@@ -278,68 +278,109 @@ class CosyVoiceTTSClient:
             else:
                 print(f"❌ 不支持的操作系统: {system}")
                 return False
-                
+
             return True
-            
+
         except Exception as e:
             print(f"❌ 播放音频时出错: {e}")
             return False
 
 
-def test_cosyvoice_websocket_direct():
-    """直接对接CosyVoice WebSocket API测试"""
-    
-    # 从环境变量获取API Key
-    api_key = os.getenv("DASHSCOPE_API_KEY")
-    
-    if not api_key:
-        print("❌ 错误: 未设置 DASHSCOPE_API_KEY 环境变量")
-        print("请设置环境变量: export DASHSCOPE_API_KEY=your_api_key")
-        return False
-    
-    print(f"🔑 使用API Key: {api_key[:10]}...")
-    
-    # WebSocket服务地址 - 直接连接官方API
-    server_uri = "wss://dashscope.aliyuncs.com/api-ws/v1/inference/"
-    
-    print(f"🌐 直接连接官方服务: {server_uri}")
-    
-    # 创建客户端并运行测试
-    client = CosyVoiceTTSClient(api_key, server_uri)
-    
-    try:
-        success = client.run_test(timeout=60)
-        
-        if success:
-            print("\n🎉 CosyVoice WebSocket API 直接对接测试成功！")
-            print("💡 阿里云百炼平台的语音合成服务正常工作")
-            
-            # 播放音频文件
-            print("\n🎵 准备播放生成的音频...")
-            client.play_audio()
-            
-            print(f"\n📁 音频文件已保存: {client.output_file}")
-            print("💾 文件已保留，您可以手动播放或分享")
-            
-        else:
-            print("\n❌ CosyVoice WebSocket API 直接对接测试失败")
-            
-        return success
-        
-    except Exception as e:
-        print(f"❌ 测试异常: {e}")
-        return False
+class TestMyFunction(unittest.TestCase):
+    def setUp(self):
+        pass
+
+
+    def test_cosyvoice_websocket_direct(self):
+        """直接对接CosyVoice WebSocket API测试"""
+
+        # 从环境变量获取API Key
+        api_key = os.getenv("DASHSCOPE_API_KEY")
+
+        if not api_key:
+            print("❌ 错误: 未设置 DASHSCOPE_API_KEY 环境变量")
+            print("请设置环境变量: export DASHSCOPE_API_KEY=your_api_key")
+            return False
+
+        print(f"🔑 使用API Key: {api_key[:10]}...")
+
+        # WebSocket服务地址 - 直接连接官方API
+        server_uri = "wss://dashscope.aliyuncs.com/api-ws/v1/inference/"
+
+        print(f"🌐 直接连接官方服务: {server_uri}")
+
+        # 创建客户端并运行测试
+        msg_text = "您为域名 api.pay.bwton.com 购买的SSL证书已签发成功"
+        client = CosyVoiceTTSClient(api_key, server_uri, msg_text)
+
+        try:
+            success = client.run_test(timeout=60)
+
+            if success:
+                print("\n🎉 CosyVoice WebSocket API 直接对接测试成功！")
+                print("💡 阿里云百炼平台的语音合成服务正常工作")
+
+                # 播放音频文件
+                print("\n🎵 准备播放生成的音频...")
+                client.play_audio()
+
+                print(f"\n📁 音频文件已保存: {client.output_file}")
+                print("💾 文件已保留，您可以手动播放或分享")
+
+            else:
+                print("\n❌ CosyVoice WebSocket API 直接对接测试失败")
+
+            return success
+
+        except Exception as e:
+            print(f"❌ 测试异常: {e}")
+            return False
+
+    def test_cosyvoice_websocket_proxy(self):
+        """通过AIProxy代理访问CosyVoice WebSocket API测试"""
+
+        # 从环境变量获取API Key
+        api_key = os.getenv("AIPROXY_API_KEY")
+
+        if not api_key:
+            print("❌ 错误: 未设置 AIPROXY_API_KEY 环境变量")
+            print("请设置环境变量: export AIPROXY_API_KEY=your_api_key")
+            return False
+
+        print(f"🔑 使用API Key: {api_key[:10]}...")
+
+        # WebSocket服务地址 - 通过AIProxy代理
+        server_uri = "ws://localhost:8001/api-ws/v1/inference"
+
+        print(f"🌐 通过AIProxy代理访问: {server_uri}")
+
+        # 创建客户端并运行测试
+        msg_text = "您为域名 api.pay.bwton.com 购买的SSL证书已签发成功"
+        client = CosyVoiceTTSClient(api_key, server_uri, msg_text)
+
+        try:
+            success = client.run_test(timeout=60)
+
+            if success:
+                print("\n🎉 CosyVoice WebSocket API 通过AIProxy代理测试成功！")
+                print("💡 阿里云百炼平台的语音合成服务正常工作")
+
+                # 播放音频文件
+                print("\n🎵 准备播放生成的音频...")
+                client.play_audio()
+
+                print(f"\n📁 音频文件已保存: {client.output_file}")
+                print("💾 文件已保留，您可以手动播放或分享")
+
+            else:
+                print("\n❌ CosyVoice WebSocket API 通过AIProxy代理测试失败")
+
+            return success
+
+        except Exception as e:
+            print(f"❌ 测试异常: {e}")
+            return False
 
 
 if __name__ == "__main__":
-    # 检查websocket-client依赖
-    try:
-        import websocket
-        print("✅ websocket-client 已安装")
-    except ImportError:
-        print("❌ 缺少依赖: websocket-client")
-        print("请安装: pip install websocket-client")
-        exit(1)
-    
-    # 运行直接对接测试
-    test_cosyvoice_websocket_direct() 
+    unittest.main()
