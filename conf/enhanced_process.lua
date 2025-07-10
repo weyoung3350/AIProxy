@@ -153,8 +153,8 @@ local function enhanced_process()
     
     -- 检查是否为内部管理页面，如果是则直接返回，不需要验证
     local uri = ngx.var.uri
-    if uri == "/stats" or uri == "/dashboard" then
-        ngx.log(ngx.INFO, "内部管理页面请求，跳过API Key验证: " .. uri)
+    if uri == "/stats" or uri == "/dashboard" or uri == "/favicon.ico" then
+        ngx.log(ngx.DEBUG, "内部管理页面请求，跳过API Key验证: " .. uri)
         return
     end
     

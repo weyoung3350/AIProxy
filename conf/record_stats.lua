@@ -8,6 +8,13 @@ local function record_request_stats()
         return
     end
     
+    -- 检查是否为内部管理页面，如果是则跳过统计
+    local uri = ngx.var.uri
+    if uri == "/stats" or uri == "/dashboard" or uri == "/favicon.ico" then
+        ngx.log(ngx.DEBUG, "内部管理页面请求，跳过统计记录: " .. uri)
+        return
+    end
+    
     -- 获取基本信息
     local status = ngx.status
     local request_time = ngx.var.request_time or 0
