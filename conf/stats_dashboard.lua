@@ -364,8 +364,8 @@ local function generate_html(stats)
         <div class="refresh-control">
             <label for="refreshInterval">自动刷新:</label>
             <select id="refreshInterval">
-                <option value="0">不刷新</option>
-                <option value="5" selected>5秒</option>
+                <option value="0" selected>不刷新</option>
+                <option value="5">5秒</option>
                 <option value="10">10秒</option>
                 <option value="15">15秒</option>
                 <option value="30">30秒</option>
@@ -374,7 +374,7 @@ local function generate_html(stats)
             <span class="refresh-status" id="refreshStatus">下次刷新: 5秒</span>
         </div>
         
-        <div class="grid">
+        <div class="grid" id="statsGrid">
             <!-- 系统信息 -->
             <div class="card">
                 <h3>系统信息</h3>
@@ -498,10 +498,204 @@ local function generate_html(stats)
         let countdownTimer = null;
         let remainingTime = 0;
         
+        // 刷新统计数据
+        function refreshStats() {
+            fetch('/stats')
+                .then(response => response.json())
+                .then(data => {
+                    updateStatsDisplay(data);
+                    
+                    // 刷新后重新设置定时器
+                    const currentInterval = parseInt(document.getElementById('refreshInterval').value);
+                    if (currentInterval > 0) {
+                        refreshTimer = setTimeout(() => {
+                            refreshStats();
+                        }, currentInterval * 1000);
+                        startCountdown(currentInterval);
+                    }
+                })
+                .catch(error => {
+                    console.error('刷新统计数据失败:', error);
+                    // 如果 AJAX 失败，回退到页面刷新
+                    window.location.reload();
+                });
+        }
+        
+        // 更新统计数据显示
+        function updateStatsDisplay(stats) {
+            // 更新系统信息卡片
+            updateSystemInfo(stats);
+            
+            // 更新请求统计卡片
+            updateRequestStats(stats);
+            
+            // 更新协议统计卡片
+            updateProtocolStats(stats);
+            
+            // 更新渠道统计卡片
+            updateChannelStats(stats);
+            
+            // 更新页面底部时间
+            updateFooterTime(stats);
+        }
+        
+        // 更新系统信息卡片
+        function updateSystemInfo(stats) {
+            // 更新服务名称
+            const serviceValue = document.querySelector('.card:nth-child(1) .stat-item:nth-child(1) .stat-value');
+            if (serviceValue) serviceValue.textContent = stats.service || 'AIProxy';
+            
+            // 更新版本
+            const versionValue = document.querySelector('.card:nth-child(1) .stat-item:nth-child(2) .stat-value');
+            if (versionValue) versionValue.textContent = stats.version || '2.0.0';
+            
+            // 更新运行时间
+            const uptimeValue = document.querySelector('.card:nth-child(1) .stat-item:nth-child(3) .stat-value');
+            if (uptimeValue) uptimeValue.textContent = formatUptime(stats.uptime_seconds || 0);
+            
+            // 更新API密钥数量
+            const apiKeysValue = document.querySelector('.card:nth-child(1) .stat-item:nth-child(4) .stat-value');
+            if (apiKeysValue) apiKeysValue.textContent = stats.api_keys_count || 0;
+            
+            // 更新最后更新时间
+            const lastUpdateValue = document.querySelector('.card:nth-child(1) .stat-item:nth-child(5) .stat-value');
+            if (lastUpdateValue) lastUpdateValue.textContent = formatTimestamp(stats.timestamp || 0);
+        }
+        
+        // 更新请求统计卡片
+        function updateRequestStats(stats) {
+            // 更新总请求数
+            const totalRequestsValue = document.querySelector('.card:nth-child(2) .stat-item:nth-child(1) .stat-value');
+            if (totalRequestsValue) totalRequestsValue.textContent = stats.total_requests || 0;
+            
+            // 更新成功请求数
+            const successfulRequestsValue = document.querySelector('.card:nth-child(2) .stat-item:nth-child(2) .stat-value');
+            if (successfulRequestsValue) successfulRequestsValue.textContent = stats.successful_requests || 0;
+            
+            // 更新失败请求数
+            const failedRequestsValue = document.querySelector('.card:nth-child(2) .stat-item:nth-child(3) .stat-value');
+            if (failedRequestsValue) failedRequestsValue.textContent = stats.failed_requests || 0;
+            
+            // 更新成功率
+            const successRateValue = document.querySelector('.card:nth-child(2) .stat-item:nth-child(4) .stat-value');
+            if (successRateValue) successRateValue.textContent = (stats.success_rate || 0).toFixed(2) + '%';
+            
+            // 更新平均响应时间
+            const avgResponseTimeValue = document.querySelector('.card:nth-child(2) .stat-item:nth-child(6) .stat-value');
+            if (avgResponseTimeValue) avgResponseTimeValue.textContent = (stats.avg_response_time || 0) + '秒';
+            
+            // 更新最后请求时间
+            const lastRequestTimeValue = document.querySelector('.card:nth-child(2) .stat-item:nth-child(7) .stat-value');
+            if (lastRequestTimeValue) lastRequestTimeValue.textContent = formatTimestamp(stats.last_request_time || 0);
+            
+            // 更新进度条
+            const progressFill = document.querySelector('.card:nth-child(2) .progress-fill');
+            if (progressFill) {
+                progressFill.style.width = (stats.success_rate || 0) + '%';
+            }
+        }
+        
+        // 更新协议统计卡片
+        function updateProtocolStats(stats) {
+            // 更新HTTP请求数
+            const httpRequestsValue = document.querySelector('.card:nth-child(3) .stat-item:nth-child(1) .stat-value');
+            if (httpRequestsValue) httpRequestsValue.textContent = stats.protocol_stats?.http_requests || 0;
+            
+            // 更新WebSocket请求数
+            const websocketRequestsValue = document.querySelector('.card:nth-child(3) .stat-item:nth-child(2) .stat-value');
+            if (websocketRequestsValue) websocketRequestsValue.textContent = stats.protocol_stats?.websocket_requests || 0;
+            
+            // 更新WebSocket连接数
+            const websocketConnectionsValue = document.querySelector('.card:nth-child(3) .stat-item:nth-child(3) .stat-value');
+            if (websocketConnectionsValue) websocketConnectionsValue.textContent = stats.protocol_stats?.websocket_connections || 0;
+            
+            // 更新WebSocket连接率
+            const websocketConnectionRateValue = document.querySelector('.card:nth-child(3) .stat-item:nth-child(4) .stat-value');
+            if (websocketConnectionRateValue) websocketConnectionRateValue.textContent = (stats.protocol_stats?.websocket_connection_rate || 0).toFixed(2) + '%';
+            
+            // 更新进度条
+            const progressFill = document.querySelector('.card:nth-child(3) .progress-fill');
+            if (progressFill) {
+                progressFill.style.width = (stats.protocol_stats?.websocket_connection_rate || 0) + '%';
+            }
+        }
+        
+        // 更新渠道统计卡片
+        function updateChannelStats(stats) {
+            const tbody = document.querySelector('.card:nth-child(4) tbody');
+            if (tbody && stats.channel_stats) {
+                // 获取现有的行
+                const existingRows = tbody.querySelectorAll('tr');
+                const currentChannels = new Set();
+                
+                // 更新现有行的数据
+                Object.keys(stats.channel_stats).forEach((channelId, index) => {
+                    const channel = stats.channel_stats[channelId];
+                    currentChannels.add(channelId);
+                    
+                    let row = existingRows[index];
+                    if (!row) {
+                        // 如果行不存在，创建新行
+                        row = document.createElement('tr');
+                        tbody.appendChild(row);
+                    }
+                    
+                    const statusClass = channel.status === 'active' ? 'status-active' : 'status-inactive';
+                    const statusText = channel.status === 'active' ? '活跃' : '非活跃';
+                    
+                    // 更新行的内容
+                    row.innerHTML = `
+                        <td>${channel.name}</td>
+                        <td>${channel.requests}</td>
+                        <td class="${statusClass}">${statusText}</td>
+                    `;
+                });
+                
+                // 删除多余的行
+                for (let i = Object.keys(stats.channel_stats).length; i < existingRows.length; i++) {
+                    existingRows[i].remove();
+                }
+            }
+        }
+        
+        // 更新页面底部时间
+        function updateFooterTime(stats) {
+            const footerTime = document.querySelector('.refresh-info p');
+            if (footerTime) {
+                footerTime.textContent = '当前时间: ' + formatTimestamp(stats.timestamp || 0);
+            }
+        }
+        
+        // 格式化运行时间
+        function formatUptime(seconds) {
+            const days = Math.floor(seconds / 86400);
+            const hours = Math.floor((seconds % 86400) / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            const secs = seconds % 60;
+            
+            if (days > 0) {
+                return `${days}天 ${hours}小时 ${minutes}分钟`;
+            } else if (hours > 0) {
+                return `${hours}小时 ${minutes}分钟`;
+            } else if (minutes > 0) {
+                return `${minutes}分钟 ${secs}秒`;
+            } else {
+                return `${secs}秒`;
+            }
+        }
+        
+        // 格式化时间戳
+        function formatTimestamp(timestamp) {
+            if (timestamp === 0) {
+                return '从未';
+            }
+            return new Date(timestamp * 1000).toLocaleString('zh-CN');
+        }
+        
         // 从本地存储加载刷新间隔设置
         function loadRefreshInterval() {
             const saved = localStorage.getItem('dashboardRefreshInterval');
-            return saved ? parseInt(saved) : 5;
+            return saved ? parseInt(saved) : 0;
         }
         
         // 保存刷新间隔设置到本地存储
@@ -534,7 +728,7 @@ local function generate_html(stats)
                     updateRefreshStatus(interval, remainingTime);
                 } else {
                     clearInterval(countdownTimer);
-                    window.location.reload();
+                    refreshStats();
                 }
             }, 1000);
         }
@@ -554,7 +748,7 @@ local function generate_html(stats)
             if (interval > 0) {
                 // 设置新的刷新定时器
                 refreshTimer = setTimeout(() => {
-                    window.location.reload();
+                    refreshStats();
                 }, interval * 1000);
                 
                 // 开始倒计时显示

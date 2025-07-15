@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python test/integration/test_text2image_http.py)"
+    ],
+    "deny": []
+  }
+}
