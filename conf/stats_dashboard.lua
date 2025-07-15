@@ -84,6 +84,22 @@ local function get_stats()
         end
     end
     
+    -- 用户调用统计
+    local user_stats = {}
+    if _G.api_keys then
+        for _, keyinfo in ipairs(_G.api_keys) do
+            local proxy_key = keyinfo.proxy_key or "unknown"
+            local description = keyinfo.description or ""
+            local user_key = "user_" .. proxy_key .. "_requests"
+            local user_requests = stats:get(user_key) or 0
+            table.insert(user_stats, {
+                proxy_key = proxy_key,
+                description = description,
+                requests = user_requests
+            })
+        end
+    end
+    
     -- 计算统计值
     local avg_response_time = "0.000"
     if total_requests > 0 and total_response_time > 0 then
@@ -119,6 +135,7 @@ local function get_stats()
         websocket_connection_rate = websocket_connection_rate,
         
         channel_stats = channel_stats,
+        user_stats = user_stats,
         
         avg_response_time = avg_response_time,
         last_request_time = last_request_time,
@@ -486,6 +503,32 @@ local function generate_html(stats)
                     </tbody>
                 </table>
             </div>
+
+            <!-- 用户调用统计 -->
+            <div class="card">
+                <h3>用户调用统计</h3>
+                <table class="channel-table">
+                    <thead>
+                        <tr>
+                            <th>API Key（前8位）</th>
+                            <th>描述</th>
+                            <th>调用次数</th>
+                        </tr>
+                    </thead>
+                    <tbody>]]
+    for _, user in ipairs(stats.user_stats or {}) do
+        local key_short = string.sub(user.proxy_key or "", 1, 8)
+        html = html .. [[
+                        <tr>
+                            <td>]] .. key_short .. [[</td>
+                            <td>]] .. (user.description or "") .. [[</td>
+                            <td>]] .. (user.requests or 0) .. [[</td>
+                        </tr>]]
+    end
+    html = html .. [[
+                    </tbody>
+                </table>
+            </div>
         </div>
         
         <div class="refresh-info">
@@ -534,6 +577,9 @@ local function generate_html(stats)
             
             // 更新渠道统计卡片
             updateChannelStats(stats);
+
+            // 更新用户调用统计卡片
+            updateUserStats(stats);
             
             // 更新页面底部时间
             updateFooterTime(stats);
@@ -653,6 +699,41 @@ local function generate_html(stats)
                 
                 // 删除多余的行
                 for (let i = Object.keys(stats.channel_stats).length; i < existingRows.length; i++) {
+                    existingRows[i].remove();
+                }
+            }
+        }
+
+        // 更新用户调用统计卡片
+        function updateUserStats(stats) {
+            const tbody = document.querySelector('.card:nth-child(5) tbody');
+            if (tbody && stats.user_stats) {
+                // 获取现有的行
+                const existingRows = tbody.querySelectorAll('tr');
+                const currentUsers = new Set();
+
+                // 更新现有行的数据
+                Object.keys(stats.user_stats).forEach((userId, index) => {
+                    const user = stats.user_stats[userId];
+                    currentUsers.add(userId);
+
+                    let row = existingRows[index];
+                    if (!row) {
+                        // 如果行不存在，创建新行
+                        row = document.createElement('tr');
+                        tbody.appendChild(row);
+                    }
+
+                    // 更新行的内容
+                    row.innerHTML = `
+                        <td>${user.proxy_key}</td>
+                        <td>${user.description}</td>
+                        <td>${user.requests}</td>
+                    `;
+                });
+
+                // 删除多余的行
+                for (let i = Object.keys(stats.user_stats).length; i < existingRows.length; i++) {
                     existingRows[i].remove();
                 }
             }

@@ -58,6 +58,14 @@ local function record_request_stats()
         stats:set(channel_key, channel_requests + 1)
     end
     
+    -- 统计每个API Key（Proxy-Key）的调用次数
+    local proxy_key = ngx.ctx.proxy_key
+    if proxy_key then
+        local user_key = "user_" .. proxy_key .. "_requests"
+        local user_requests = stats:get(user_key) or 0
+        stats:set(user_key, user_requests + 1)
+    end
+    
     -- 更新响应时间统计
     local total_response_time = stats:get("total_response_time") or 0
     local new_total_time = total_response_time + tonumber(request_time)

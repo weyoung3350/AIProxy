@@ -217,7 +217,10 @@ local function enhanced_process()
     end
     
     ngx.log(ngx.INFO, "找到用户信息: " .. (user_info.user or "unknown") .. ", 渠道: " .. (user_info.channel or "unknown"))
-    
+
+    -- 将Proxy-Key存入ngx.ctx，供后续统计使用
+    ngx.ctx.proxy_key = proxy_key
+
     -- 获取用户指定的渠道配置
     local channel_config = get_channel_config(user_info.channel, channels)
     if not channel_config then
